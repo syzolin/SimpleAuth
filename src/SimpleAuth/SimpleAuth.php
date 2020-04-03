@@ -113,7 +113,7 @@ class SimpleAuth extends PluginBase{
 		}
 
 		$player->recalculatePermissions();
-		$player->sendMessage(TextFormat::GREEN . ($this->getMessage("login.success") ?? "You have been authenticated"));
+		$player->sendMessage(TextFormat::GREEN . ($this->getMessage("login.success") ?? "§c[SERVER]§aYou have been successfully authenticated and Stats loaded."));
 
 		$this->getMessageTask()->removePlayer($player);
 
@@ -247,13 +247,13 @@ class SimpleAuth extends PluginBase{
 
 	public function sendAuthenticateMessage(Player $player){
 		$config = $this->provider->getPlayerData($player->getName());
-		$player->sendMessage(TextFormat::ITALIC . TextFormat::GRAY . $this->getMessage("join.message1") ?? "This server requires account registration.");
-		$player->sendMessage(TextFormat::ITALIC . TextFormat::GRAY . $this->getMessage("join.message2") ?? "You must login to play.");
+		$player->sendMessage(TextFormat::ITALIC . TextFormat::GRAY . $this->getMessage("join.message1") ?? "§fWelcome to §cHYPHOVY NETWORK!§fThis server requires authentication before you could play.");
+		$player->sendMessage(TextFormat::ITALIC . TextFormat::GRAY . $this->getMessage("join.message2") ?? "§fYou must §alogin §fto your §6registered account §fin order to §aplay.");
 		if($config === null){
-			$player->sendMessage(TextFormat::YELLOW . $this->getMessage("join.register") ?? "Please register using: /register <password>");
+			$player->sendMessage(TextFormat::YELLOW . $this->getMessage("join.register") ?? "§c[SERVER] §fPlease register using: §6/register <password>");
 		}else{
-			if($this->allowLinking) $player->sendMessage(TextFormat::YELLOW . ($this->getMessage("join.loggingas") ? $this->getMessage("join.loggingas") . $player->getName() : "You are connecting as " . $player->getName()));
-			$player->sendMessage(TextFormat::YELLOW . $this->getMessage("join.login") ?? "Log in using: /login <password>");
+			if($this->allowLinking) $player->sendMessage(TextFormat::YELLOW . ($this->getMessage("join.loggingas") ? $this->getMessage("join.loggingas") . $player->getName() : "§c[SERVER}§a You are connecting as " . $player->getName()));
+			$player->sendMessage(TextFormat::YELLOW . $this->getMessage("join.login") ?? "§c[SERVER]§6 You can Log in to your registered account using: /login <password>");
 		}
 	}
 
@@ -267,7 +267,7 @@ class SimpleAuth extends PluginBase{
 					}
 
 					if(!$this->isPlayerRegistered($sender) or ($this->provider->getPlayerData($sender->getName())) === null){
-						$sender->sendMessage(TextFormat::RED . $this->getMessage("login.error.registered") ?? "This account is not registered.");
+						$sender->sendMessage(TextFormat::RED . $this->getMessage("login.error.registered") ?? "§c[SERVER] §fThis account is §cnot registered. §fUse §6/register (password) §fto register it.");
 						return true;
 					}
 
@@ -280,7 +280,7 @@ class SimpleAuth extends PluginBase{
 						return true;
 					}else{
 						$this->tryAuthenticatePlayer($sender);
-						$sender->sendMessage(TextFormat::RED . $this->getMessage("login.error.password") ?? "Incorrect Password");
+						$sender->sendMessage(TextFormat::RED . $this->getMessage("login.error.password") ?? "You have entered an Incorrect Password. Repeated Attempts can lead to a Temp-Ban.");
 						return true;
 					}
 				}
@@ -288,20 +288,20 @@ class SimpleAuth extends PluginBase{
 			case "register":
 				if($sender instanceof Player){
 					if($this->isPlayerRegistered($sender)){
-						$sender->sendMessage(TextFormat::RED . $this->getMessage("register.error.registered") ?? "This account is already registered.");
+						$sender->sendMessage(TextFormat::RED . $this->getMessage("register.error.registered") ?? "§cERROR- This account is already registered. If you are not the owner of this account, choose another nickname.");
 						return true;
 					}
 
 					$password = implode(" ", $args);
 					if(strlen($password) < $this->getConfig()->get("minPasswordLength")){
-						$sender->sendMessage($this->getMessage("register.error.password") ?? "Your password is too short!");
+						$sender->sendMessage($this->getMessage("register.error.password") ?? "§cERROR - Your password is too short!");
 						return true;
 					}
 
 					if($this->registerPlayer($sender, $password) and $this->authenticatePlayer($sender)){
 						return true;
 					}else{
-						$sender->sendMessage(TextFormat::RED . $this->getMessage("register.error.general") ?? "Error during authentication.");
+						$sender->sendMessage(TextFormat::RED . $this->getMessage("register.error.general") ?? "Error during authentication. §fPlease contact Server Administrator");
 						return true;
 					}
 				}else{
@@ -313,27 +313,27 @@ class SimpleAuth extends PluginBase{
 			case "link":
 				if(!($sender instanceof Player) or count($args) !== 2) return false;
 				if(!$this->getConfig()->get("allowLinking")){
-					$sender->sendMessage(TextFormat::AQUA . "Please add 'allowLinking: true' to SimpleAuth config.yml");
+					$sender->sendMessage(TextFormat::AQUA . "§cERROR- Please add §6'allowLinking: true' §cin the server config.");
 					return true;
 				}
 				if(!$this->getDataProvider()->isDBLinkingReady()){
-					$sender->sendMessage(TextFormat::AQUA . "Please update your SimpleAuth DataBase for linking: see config.yml");
+					$sender->sendMessage(TextFormat::AQUA . "§cERROR- Please update your DataBase for linking: see config.yml");
 					return true;
 				}
 				$oldIGN = $args[0];
 				$oldPWD = $args[1];
 				$linked = $this->getDataProvider()->getLinked($sender->getName());
 				if($linked !== null and $linked !== "" and strtolower($sender->getName()) === strtolower($linked)){
-					$sender->sendMessage(TextFormat::RED . ($this->getMessage("link.sameign") ?? "You cannot link to the same account you are using"));
+					$sender->sendMessage(TextFormat::RED . ($this->getMessage("link.sameign") ?? "§cERROR - You cannot link to the same account you are using"));
 					return true;
 				}
 				if(($linked !== null and $linked !== "") or isset($this->notRelogged[spl_object_hash($sender)])){
-					$sender->sendMessage(TextFormat::RED . ($this->getMessage("link.selfalreadylinked") ?? "You must unlink this account and relog before you link again"));
+					$sender->sendMessage(TextFormat::RED . ($this->getMessage("link.selfalreadylinked") ?? "ERROR - You must unlink this account and relog before you link again"));
 					return true;
 				}
 				$oldLinked = $this->getDataProvider()->getLinked($oldIGN);
 				if($oldLinked !== null and $oldLinked !== ""){
-					$sender->sendMessage(TextFormat::RED . ($this->getMessage("link.otheralreadylinked") ?? "That account is already linked to ") . $oldLinked);
+					$sender->sendMessage(TextFormat::RED . ($this->getMessage("link.otheralreadylinked") ?? "§cERROR - That account is already linked to ") . $oldLinked);
 					return true;
 				}
 				$oldPlayer = Server::getInstance()->getOfflinePlayer($oldIGN);
@@ -344,30 +344,30 @@ class SimpleAuth extends PluginBase{
 
 					if($success){
 						$this->notRelogged[spl_object_hash($sender)] = true;
-						$line1 = $this->getMessage("link.success1") ?? "Accounts Linked! Login again with the password for ";
-						$line2 = $this->getMessage("link.success2") ?? "Use /unlink to unlink these accounts at any time";
+						$line1 = $this->getMessage("link.success1") ?? "§a[SUCCESS] Accounts Linked! Login again with the password for ";
+						$line2 = $this->getMessage("link.success2") ?? "§6SERVER - Use /unlink to unlink these accounts at any time";
 						$message = TextFormat::GREEN . $line1 . $oldIGN . "\n" . TextFormat::RED . $line2;
 						$sender->sendMessage($message);
 						return true;
 					}
 				}
-				$sender->sendMessage(TextFormat::RED . ($this->getMessage("link.error") ?? "There was a problem linking the accounts"));
+				$sender->sendMessage(TextFormat::RED . ($this->getMessage("link.error") ?? "ERROR: There was a problem linking the accounts"));
 				return false;
 				break;
 
 			case "unlink":
 				if(!$this->getConfig()->get("allowLinking")){
-					$sender->sendMessage(TextFormat::AQUA . "Please enable 'allowLinking' in SimpleAuth config.yml");
+					$sender->sendMessage(TextFormat::AQUA . "§cERROR: Please enable 'allowLinking' in config.yml");
 					return true;
 				}
                 if(!($sender instanceof Player)){
 				    if (!isset($args[0])) {
-                        $sender->sendMessage(TextFormat::RED . ($this->getMessage("link.consoleerror") ?? "Please use /unlink <player> with player IGN in double quotes if it contains spaces"));
+                        $sender->sendMessage(TextFormat::RED . ($this->getMessage("link.consoleerror") ?? "§6SERVER- Please use /unlink <player> with player IGN in double quotes if it contains spaces"));
                         return true;
                     }
                     $linked = $this->getDataProvider()->getLinked($args[0]);
                     if($linked === null or $linked === ""){
-                        $sender->sendMessage(TextFormat::RED . ($this->getMessage("link.consoleunlinkerror") ?? "That account is not linked"));
+                        $sender->sendMessage(TextFormat::RED . ($this->getMessage("link.consoleunlinkerror") ?? "§cERROR- That account is not linked"));
                         return true;
                     }
                     $xboxIGN = $this->getDataProvider()->unlinkXBL($args[0]);
